@@ -27,7 +27,7 @@ gh secret set APP_STORE_CONNECT_PRIVATE_KEY -R $R < ~/Downloads/AuthKey_KEY_ID.p
 Sonra yükle (ikisinden biri):
 ```bash
 gh workflow run ios-testflight.yml -R onatdenizsener/bonkaroo -f version=1.0
-git tag v1.0 && git push origin v1.0      # etiket gönderince de aynı iş akışı çalışır
+git push origin main:testflight          # testflight dalına gönderince de çalışır (sürüm: app/VERSION)
 ```
 
 ## Uygulama içi satın alımlar

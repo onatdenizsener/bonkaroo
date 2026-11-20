@@ -8,7 +8,7 @@
 #   APPLE_TEAM_ID                  10-character Team ID (developer.apple.com > Membership)
 # AdMob ids live in app/www/ads-config.js (they are not secret); optional secrets BONKAROO_ADMOB_* override them.
 name: iOS TestFlight
-run-name: TestFlight Bonkaroo ${{ inputs.version || github.ref_name }}
+run-name: TestFlight Bonkaroo ${{ inputs.version || 'from app/VERSION' }}
 on:
   workflow_dispatch:
     inputs:
@@ -16,9 +16,10 @@ on:
         description: 'Version shown in the App Store (e.g. 1.0)'
         required: true
         default: '1.0'
-  # pushing a tag such as v1.0 uploads that version too (no Actions page or gh needed): git tag v1.0 && git push origin v1.0
+  # pushing to the "testflight" branch uploads too (no Actions page or gh needed); the version comes from app/VERSION:
+  #   git push origin main:testflight
   push:
-    tags: ['v*']
+    branches: ['testflight']
 jobs:
   upload:
     runs-on: macos-15-intel
@@ -52,14 +53,18 @@ jobs:
         run: npx cap add ios --packagemanager CocoaPods
       - name: Configure the iOS project
         env:
-          APP_VERSION: ${{ inputs.version || github.ref_name }}
+          APP_VERSION: ${{ inputs.version }}
           # Optional overrides for the AdMob ids in app/www/ads-config.js
           ADMOB_APP_ID: ${{ secrets.BONKAROO_ADMOB_APP_ID }}
           ADMOB_REWARDED_ID: ${{ secrets.BONKAROO_ADMOB_REWARDED_ID }}
           ADMOB_INTERSTITIAL_ID: ${{ secrets.BONKAROO_ADMOB_INTERSTITIAL_ID }}
           ADMOB_BANNER_ID: ${{ secrets.BONKAROO_ADMOB_BANNER_ID }}
         # plain build numbers 1, 2, 3... (this workflow's run count); a tag like v1.0 becomes version 1.0
-        run: APP_VERSION="${APP_VERSION#v}" BUILD_NUMBER=$GITHUB_RUN_NUMBER python3 tools/ios_setup.py && python3 tools/ads_audit.py
+        run: |
+          [ -n "$APP_VERSION" ] || APP_VERSION=$(tr -d ' \n' < VERSION)
+          echo "version $APP_VERSION, build $GITHUB_RUN_NUMBER"
+          echo "APP_VERSION=$APP_VERSION" >> "$GITHUB_ENV"
+          APP_VERSION="$APP_VERSION" BUILD_NUMBER=$GITHUB_RUN_NUMBER python3 tools/ios_setup.py && python3 tools/ads_audit.py
       - name: App Store Connect key
         env:
           ASC_KEY_P8: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
@@ -173,4 +178,4 @@ jobs:
             echo "::error::Export failed. See 'Signing diagnostics' above and the Xcode distribution log."
             exit 1
           fi
-          echo "Uploaded Bonkaroo build $GITHUB_RUN_NUMBER (version ${{ inputs.version || github.ref_name }}). It appears in App Store Connect > TestFlight after Apple processes it."
+          echo "Uploaded Bonkaroo build $GITHUB_RUN_NUMBER (version $APP_VERSION). It appears in App Store Connect > TestFlight after Apple processes it."
