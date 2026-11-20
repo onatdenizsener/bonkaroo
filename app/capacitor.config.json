@@ -1,0 +1,18 @@
+{
+  "appId": "com.flixtoys.bonkaroo",
+  "appName": "Bonkaroo",
+  "webDir": "www",
+  "backgroundColor": "#05040c",
+  "ios": {
+    "contentInset": "never",
+    "scrollEnabled": false,
+    "backgroundColor": "#05040c",
+    "webContentsDebuggingEnabled": false,
+    "preferredContentMode": "mobile",
+    "allowsLinkPreview": false
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#e11d2a"
+  }
+}

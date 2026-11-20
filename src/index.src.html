@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#05040c">
+<title>Bonkaroo</title>
+<style>
+  :root{--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px)}
+  html,body{margin:0;height:100%;overflow:hidden;background:#05040c;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Arabic",sans-serif;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+  canvas#c{display:block;width:100vw;height:100vh}
+  [hidden]{display:none!important}
+  i.coin{display:inline-block;width:.85em;height:.85em;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff3b0,#ffc93c 45%,#d99a00);box-shadow:inset 0 0 0 2px #b8860b;vertical-align:-.08em;margin-inline-end:.25em}
+  #hud{position:fixed;top:calc(10px + var(--sat));left:12px;right:12px;display:flex;justify-content:space-between;pointer-events:none;color:#fff;font-weight:800;text-shadow:0 2px 3px rgba(0,0,0,.45);font-size:15px}
+  #hud .big{font-size:28px;font-variant-numeric:tabular-nums}
+  #route{position:fixed;top:calc(78px + var(--sat));left:50%;transform:translateX(-50%);pointer-events:none;background:rgba(10,20,40,.35);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff;border-radius:14px;padding:6px 12px;font-weight:800;font-size:13px;text-align:center;min-width:220px;opacity:0;transition:opacity .35s}
+  #route .bar{height:7px;background:rgba(255,255,255,.3);border-radius:4px;margin-top:5px;overflow:hidden}
+  #route .bar i{display:block;height:100%;background:linear-gradient(90deg,#ffd23f,#ff8a1f);width:0;border-radius:4px}
+  [dir=rtl] #route .bar i{margin-inline-start:auto}
+  .panel{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(20,40,70,.5);overflow:auto;opacity:0;pointer-events:none;transition:opacity .28s ease;z-index:10;padding:var(--sat) 0 var(--sab)}
+  .panel.on{opacity:1;pointer-events:auto}
+  #shopPanel,#setPanel,#passPanel{z-index:20}#modal{z-index:40}#houseAd{z-index:50}
+  .card{background:#fffaf0;border-radius:24px;padding:18px 16px;width:min(380px,90vw);text-align:center;box-shadow:0 10px 0 rgba(0,0,0,.18),0 20px 50px rgba(0,0,0,.25);margin:auto;transform:translateY(24px) scale(.94);transition:transform .42s cubic-bezier(.2,1.4,.4,1);max-height:calc(100% - 24px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-sizing:border-box}
+  .panel.on .card{transform:none}
+  .card h1{margin:0;font-size:40px;color:#e11d2a;letter-spacing:.5px}
+  .card h2{margin:0 0 8px;font-size:22px;color:#1b1330}
+  .card p{margin:6px 0;color:#444;font-size:14px;line-height:1.4}
+  .tag{color:#777;font-size:14px;margin-bottom:6px}
+  .stat{font-size:40px;font-weight:900;color:#e11d2a;margin:2px 0;font-variant-numeric:tabular-nums}
+  .row{display:flex;justify-content:space-between;color:#555;font-size:14px;margin:2px 4px}
+  .shop{margin:10px 0 4px;display:grid;gap:7px}
+  .up{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fff;border:2px solid #eadfcf;border-radius:14px;padding:7px 10px;text-align:start}
+  .up b{display:block;font-size:14px;color:#222}
+  .up small{color:#777;font-size:12px;display:block}
+  .pips{display:flex;gap:3px;margin-top:4px}.pips i{width:10px;height:5px;border-radius:3px;background:#e6dccb}.pips i.on{background:#e11d2a}
+  button{font:inherit;font-weight:800;border:0;border-radius:12px;cursor:pointer;transition:transform .12s ease,box-shadow .12s ease;color:#5a4a33}
+  button:active{transform:translateY(3px) scale(.98)}
+  button:disabled{cursor:default}
+  .buy{background:#ffc93c;color:#5a3b00;padding:8px 10px;min-width:72px;box-shadow:0 3px 0 #d9a21a;white-space:nowrap}
+  .buy:disabled{background:#ddd;color:#999;box-shadow:none}
+  .buy.iap{background:#2ec27e;color:#fff;box-shadow:0 3px 0 #1d8a58;min-width:88px}
+  button.on{background:#1b1330;color:#fff;padding:8px 10px}
+  .go{margin-top:10px;width:100%;padding:13px;font-size:19px;background:#e11d2a;color:#fff;box-shadow:0 5px 0 #9b1717}
+  .sec{display:flex;gap:8px}
+  .sec button{flex:1;margin-top:8px;padding:10px;background:#e9e1d3;color:#5a4a33;box-shadow:0 3px 0 #cbbfa9}
+  .ads{display:flex;gap:8px;margin:8px 0 2px}
+  .ads button{flex:1;padding:9px 6px;background:linear-gradient(180deg,#7b5cff,#5b2bb5);color:#fff;box-shadow:0 4px 0 #3c1a80;font-size:14px;line-height:1.15}
+  .ads button small{display:block;font-weight:600;font-size:10px;opacity:.85;margin-top:2px}
+  .ads button:disabled{opacity:.45}.ads button.used{background:#2ec27e;box-shadow:0 4px 0 #1d8a58;opacity:1}
+  .coins{color:#b8860b;font-weight:900}
+  .tour{display:block;width:100%;text-align:start;background:#fff;border:3px solid #eadfcf;border-radius:16px;padding:12px 14px;margin:8px 0;box-shadow:0 4px 0 #e2d6c2}
+  .tour b{font-size:18px;color:#e11d2a}
+  .tour span{display:block;color:#666;font-size:13px;font-weight:600;margin-top:3px}
+  .badge{display:inline-block;background:#ffd23f;color:#5a3b00;border-radius:10px;padding:3px 10px;font-weight:900;font-size:13px;margin:2px 0 4px}
+  .rt{display:flex;align-items:center;margin:12px 4px 4px}
+  .rt .d{width:14px;height:14px;border-radius:50%;background:#ddd;border:2px solid #bbb;flex:none}
+  .rt .d.on{background:#e11d2a;border-color:#9b1717}
+  .rt .l{flex:1;height:5px;background:#ddd;position:relative}
+  .rt .l i{position:absolute;inset-inline-start:0;top:0;bottom:0;background:#e11d2a}
+  .rtn{display:flex;justify-content:space-between;font-size:10px;color:#777;font-weight:700;margin:0 -6px}
+  .next{font-size:14px;color:#333;font-weight:700;margin:6px 0}
+  .stamp{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:86px;height:86px;border-radius:50%;border:4px double;transform:rotate(-12deg);font-weight:900;font-size:12px;line-height:1.1;margin:6px;text-align:center;box-sizing:border-box;padding:4px}
+  .stamp small{font-size:9px;font-weight:700}
+  .stamp.off{border-color:#ccc!important;color:#ccc!important;background:#f3f3f3}
+  .newstamp{background:#fff3c4;border-radius:14px;padding:8px;margin:8px 0;font-weight:800;color:#7a5600}
+  .newstamp .stamp{animation:stampIn .55s cubic-bezier(.2,1.6,.4,1) .35s both}
+  @keyframes stampIn{from{transform:rotate(-40deg) scale(2.2);opacity:0}to{transform:rotate(-12deg) scale(1);opacity:1}}
+  .grid{display:flex;flex-wrap:wrap;justify-content:center}.ph{font-weight:800;color:#333;margin-top:10px}
+  #menuArt{display:block;margin:0 auto -6px;width:220px;height:150px}
+  .tabs{display:flex;gap:6px;margin:6px 0 10px}.tabs button{flex:1;padding:9px 4px;background:#e9e1d3}.tabs button.on{background:#e11d2a;color:#fff}
+  .wallet{font-size:20px;font-weight:900;color:#b8860b;margin-bottom:4px}
+  .toys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .toy{background:#fff;border:2px solid #eadfcf;border-radius:14px;padding:6px 4px 8px}.toy.sel{border-color:#e11d2a}
+  .toy canvas{width:60px;height:60px;display:block;margin:0 auto}.toy .nm{font-size:12px;font-weight:800;color:#333;margin:2px 0 6px;min-height:2.4em;display:flex;align-items:center;justify-content:center}
+  .toy button{width:100%;padding:6px 2px;font-size:13px;background:#e9e1d3}.toy button.buy{background:#ffc93c}
+  #shopGrid{display:grid;gap:8px}
+  .pack{position:relative;display:flex;align-items:center;justify-content:space-between;background:#fff;border:2px solid #eadfcf;border-radius:14px;padding:12px;text-align:start}
+  .pack.best{border-color:#ffc93c;background:#fffbea}.pack .pc{font-size:20px;font-weight:900;color:#b8860b}
+  .pack b{display:block;color:#222}.pack small{color:#777;font-size:12px}
+  .ribbon{position:absolute;top:-9px;inset-inline-start:10px;background:#e11d2a;color:#fff;font-size:10px;font-weight:900;padding:2px 8px;border-radius:8px}
+  .link{background:none;color:#7a6a55;text-decoration:underline;padding:10px;font-size:14px}
+  .setrow{display:flex;align-items:center;justify-content:space-between;padding:8px 2px;border-bottom:1px solid #eee3d2;font-weight:800;color:#333}
+  .setrow button{min-width:74px;padding:8px 10px;background:#e9e1d3}
+  .setrow button.on{background:#2ec27e;color:#fff;box-shadow:0 3px 0 #1d8a58}
+  #langs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0 4px}#langs button{padding:8px 4px;background:#e9e1d3;font-size:13px}#langs button.on{background:#1b1330;color:#fff}
+  .wide{width:100%;margin-top:8px;padding:11px;background:#e9e1d3;box-shadow:0 3px 0 #cbbfa9}
+  #verT{color:#999;font-size:12px;margin-top:10px}
+  #mB{color:#444;font-size:15px;line-height:1.45;margin:6px 0 4px}.mprice{font-size:26px;font-weight:900;color:#1b1330;margin:6px 0}
+  #houseAd{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#05040c;color:#fff;opacity:0;pointer-events:none;transition:opacity .25s;text-align:center;padding:24px}
+  #houseAd.on{opacity:1;pointer-events:auto}
+  #houseAd b{font-size:34px;letter-spacing:.3em;margin-bottom:14px}#houseAd p{font-size:17px;color:#ffc20e;max-width:300px}
+  #houseN{margin-top:24px;width:46px;height:46px;border-radius:50%;border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px}
+</style>
+</head>
+<body>
+/*INTRO*/
+<canvas id="c"></canvas>
+<div id="hud"><div><div class="big" id="dist">0 m</div><div id="best"></div></div><div style="text-align:end"><div class="big coins" id="coinHud"></div><div id="boostHud"></div></div></div>
+<div id="route"><div id="routeTxt"></div><div class="bar"><i id="routeBar"></i></div></div>
+
+<div class="panel" id="menuPanel"><div class="card">
+  <canvas id="menuArt" width="440" height="300"></canvas>
+  <h1>Bonkaroo</h1>
+  <div class="tag" data-t="tag"></div>
+  <div class="badge" id="superTag" hidden data-t="superOn"></div>
+  <div id="tours"></div>
+  <p style="font-size:13px;color:#777" data-th="howto"></p>
+  <div class="sec"><button id="shopBtn1" data-t="shop"></button><button id="passBtn1" data-t="passport"></button><button id="setBtn" data-t="settings"></button></div>
+</div></div>
+
+<div class="panel" id="endPanel"><div class="card">
+  <h2 id="endTitle"></h2>
+  <div class="stat" id="endDist">0 m</div>
+  <div id="endStamp"></div>
+  <div id="endRoute"></div>
+  <div class="row"><span data-t="earned"></span><span class="coins" id="endCoins">+0</span></div>
+  <div class="row"><span data-t="total"></span><span class="coins" id="endTotal">0</span></div>
+  <div class="ads"><button id="x2Btn">📺 <span data-t="x2"></span><small data-t="x2d"></small></button><button id="superBtn">📺 <span data-t="superB"></span><small data-t="superD"></small></button></div>
+  <div class="shop" id="endUps"></div>
+  <button class="go" id="againBtn"></button>
+  <div class="sec"><button id="shopBtn2" data-t="shop"></button><button id="passBtn2" data-t="passport"></button><button id="menuBtn" data-t="tours"></button></div>
+</div></div>
+
+<div class="panel" id="shopPanel"><div class="card">
+  <h2 data-t="shop"></h2>
+  <div class="wallet" id="shopCoins"></div>
+  <div class="tabs" id="shopTabs"><button data-tab="up" data-t="tabUp"></button><button data-tab="toys" data-t="tabToys"></button><button data-tab="coins" data-t="tabCoins"></button></div>
+  <div id="shopGrid"></div>
+  <button class="go" id="shopClose" data-t="close"></button>
+</div></div>
+
+<div class="panel" id="setPanel"><div class="card">
+  <h2 data-t="settings"></h2>
+  <div class="setrow"><span data-t="sound"></span><button id="sndB"></button></div>
+  <div class="setrow"><span data-t="haptics"></span><button id="hapB"></button></div>
+  <div class="setrow" style="border:0"><span data-t="language"></span></div>
+  <div id="langs"></div>
+  <button class="wide restoreB" id="restoreS" data-t="restore"></button>
+  <button class="wide" data-flixlegal="legal" data-t="legal"></button>
+  <button class="wide" data-flixlegal="about" data-t="about"></button>
+  <div id="verT"></div>
+  <button class="go" id="setClose" data-t="close"></button>
+</div></div>
+
+<div class="panel" id="passPanel"><div class="card">
+  <h2 data-t="passport"></h2>
+  <div id="passBody"></div>
+  <button class="go" id="passClose" data-t="close"></button>
+</div></div>
+
+<div class="panel" id="modal"><div class="card">
+  <h2 id="mT"></h2><div id="mB"></div>
+  <button class="go" id="mOk"></button>
+  <div class="sec"><button id="mNo"></button></div>
+</div></div>
+
+<div id="houseAd"><b data-t="houseT"></b><p data-t="houseB"></p><div id="houseN">3</div></div>
+
+<script>
+/*LEGAL*/
+</script>
+<script>
+/*I18N*/
+/*GAME*/
+</script>
+</body>
+</html>

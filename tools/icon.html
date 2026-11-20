@@ -1,0 +1,21 @@
+<!DOCTYPE html><html><body style="margin:0"><canvas id="c" width="1024" height="1024"></canvas>
+<script src="drawlib.js"></script>
+<script>
+const c=document.getElementById('c'),x=c.getContext('2d');
+// sky
+const g=x.createLinearGradient(0,0,0,1024);g.addColorStop(0,'#2f8fe0');g.addColorStop(1,'#bfe6ff');x.fillStyle=g;x.fillRect(0,0,1024,1024);
+// sun glow
+const s=x.createRadialGradient(800,180,10,800,180,420);s.addColorStop(0,'rgba(255,248,210,.9)');s.addColorStop(1,'rgba(255,248,210,0)');x.fillStyle=s;x.fillRect(0,0,1024,1024);
+// hills + ground
+x.fillStyle='#8fd07f';x.beginPath();x.moveTo(0,830);x.quadraticCurveTo(300,720,620,800);x.quadraticCurveTo(860,860,1024,780);x.lineTo(1024,1024);x.lineTo(0,1024);x.fill();
+x.fillStyle='#5aa84a';x.fillRect(0,900,1024,30);x.fillStyle='#b98d57';x.fillRect(0,930,1024,100);
+// motion trail of the toy (plume colours)
+const cols=['#ff3b3b','#ffc21a','#2ec27e','#2f80ff','#ff5fb8'];
+cols.forEach((cl,i)=>{x.strokeStyle=cl;x.lineWidth=16;x.lineCap='round';x.globalAlpha=.75;x.beginPath();x.moveTo(470,640+i*16-30);x.quadraticCurveTo(620,430+i*14,800,330+i*14);x.stroke()});x.globalAlpha=1;
+// mascot mid-kick
+x.save();x.translate(330,905);x.scale(4.4,4.4);
+drawMascot(x,0,0,{leg:1.25,running:false,wind:0,kickPose:1,toss:0,cheer:1,blink:1,look:{x:1,y:-1}});
+x.restore();
+// toy flying off
+x.save();x.scale(1,1);drawToy(x,840,300,Math.atan2(-0.6,1)-Math.PI/2,82,0,0.5);x.restore();
+</script></body></html>
